@@ -1,0 +1,38 @@
+name: AfnicScraper
+
+on:
+  schedule:
+    - cron: '0 4 * * *'   # Tous les jours à 04:00 UTC
+  workflow_dispatch:       # Permet de lancer manuellement
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1) Récupérer ton code
+      - name: Check out the code
+        uses: actions/checkout@v3
+
+      # 2) Installer Python
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: '3.9'
+
+      # 3) Installer dépendances
+      - name: Install dependencies
+        run: |
+          pip install requests python-whois pandas
+
+      # 4) Lancer ton script
+      - name: Run the script
+        run: |
+          python whois_scraper.py
+
+      # 5) Uploader les CSV comme "artifact"
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: results
+          path: whois_project2/*.csv
