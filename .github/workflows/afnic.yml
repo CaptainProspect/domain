@@ -32,9 +32,7 @@ jobs:
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
-          git fetch origin main  # 🔥 Récupère la dernière version distante
-          git reset --hard origin/main  # 🔥 Supprime tous les conflits et synchronise la branche
-          git pull origin main --rebase || echo "Aucun changement à récupérer"
-          git add whois_project2/*.csv
+          git add *.csv  # ✅ Ajoute seulement les fichiers CSV dans le dossier principal
           git commit -m "Mise à jour des leads AFNIC - $(date '+%Y-%m-%d')" || echo "Rien à committer"
-          git push --force  # 🔥 Force le push pour écraser les conflits
+          git push
+
