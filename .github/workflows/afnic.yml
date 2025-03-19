@@ -5,12 +5,17 @@ on:
     - cron: "0 4 * * *"  # Exécution tous les jours à 4h UTC
   workflow_dispatch:  # Permet d'exécuter manuellement si besoin
 
+permissions:
+  contents: write  # 🔥 Ajouté ici pour permettre le commit automatique
+
 jobs:
   scrape:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout du repo
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}  # Utilisation du token GitHub
 
       - name: Installer Python
         uses: actions/setup-python@v4
@@ -18,7 +23,7 @@ jobs:
           python-version: '3.9'
 
       - name: Installer les dépendances
-        run: pip install python-whois pandas requests schedule  # Ajout de 'schedule'
+        run: pip install python-whois pandas requests schedule
 
       - name: Exécuter le scraper
         run: python whois_scraper.py
