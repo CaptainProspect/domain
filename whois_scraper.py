@@ -5,6 +5,7 @@ import pandas as pd
 import time
 import os
 import re
+import schedule
 
 WHOIS_FOLDER = "whois_project2"
 
@@ -16,16 +17,18 @@ def get_yesterday_afnic_url():
 
 def download_afnic_file():
     url, date_str = get_yesterday_afnic_url()
+    print(f"[INFO] Téléchargement du fichier AFNIC : {url}")
     try:
         response = requests.get(url, timeout=30)
         response.raise_for_status()
+        
         os.makedirs(WHOIS_FOLDER, exist_ok=True)
         afnic_path = os.path.join(WHOIS_FOLDER, "afnic_domains.txt")
         with open(afnic_path, "wb") as f:
             f.write(response.content)
-        print(f"Fichier téléchargé : {afnic_path}")
+        print(f"[SUCCESS] Fichier téléchargé avec succès : {afnic_path}")
     except Exception as e:
-        print(f"Erreur téléchargement : {e}")
+        print(f"[ERROR] Échec du téléchargement : {e}")
 
 def get_domains_after_bof():
     afnic_path = os.path.join(WHOIS_FOLDER, "afnic_domains.txt")
@@ -33,7 +36,7 @@ def get_domains_after_bof():
     start_collecting = False
 
     if not os.path.exists(afnic_path):
-        print(f"Erreur : fichier {afnic_path} introuvable.")
+        print(f"[ERROR] Fichier introuvable : {afnic_path}")
         return valid_domains
 
     with open(afnic_path, "r") as f:
@@ -47,11 +50,12 @@ def get_domains_after_bof():
             if len(valid_domains) >= 50:  # Limite à 50 domaines
                 break
 
-    print(f"{len(valid_domains)} domaines trouvés (limite 50).")
+    print(f"[INFO] {len(valid_domains)} domaines trouvés (limite 50).")
     return valid_domains
 
 def get_titulaire_info(domain):
     try:
+        print(f"[INFO] WHOIS lookup pour : {domain}")
         w = whois.whois(domain)
         raw_text = w.text if w.text else ""
 
@@ -83,6 +87,7 @@ def get_titulaire_info(domain):
                 phone_set.add(phone_m.group(1))
 
         if not name_set or not phone_set:
+            print(f"[WARNING] {domain} ignoré (pas de titulaire ou tel valide)")
             return None
 
         return {
@@ -94,16 +99,16 @@ def get_titulaire_info(domain):
             "Date d'expiration": expiration_date
         }
     except Exception as e:
-        print(f"Erreur WHOIS {domain} : {e}")
+        print(f"[ERROR] Échec WHOIS {domain} : {e}")
         return None
 
 def run_whois_scraper():
-    print("Démarrage du script...")
+    print("🔄 [START] Lancement du scrapping AFNIC...")
     download_afnic_file()
 
     domains = get_domains_after_bof()
     if not domains:
-        print("Aucun domaine trouvé après #BOF.")
+        print("[ERROR] Aucun domaine trouvé après #BOF.")
         return
 
     results = []
@@ -111,13 +116,11 @@ def run_whois_scraper():
         info = get_titulaire_info(domain)
         if info:
             results.append(info)
-            print(f"✅ {domain} traité")
-        else:
-            print(f"❌ {domain} ignoré")
+            print(f"✅ {domain} ajouté")
         time.sleep(1)
 
     if not results:
-        print("Aucun domaine ne correspond aux critères.")
+        print("[ERROR] Aucun domaine ne correspond aux critères.")
         return
 
     yesterday = datetime.datetime.today() - datetime.timedelta(days=1)
@@ -126,11 +129,20 @@ def run_whois_scraper():
 
     df = pd.DataFrame(results)
 
-    print("\nAperçu des 5 premières lignes :")
+    print("\n📊 [INFO] Aperçu des 5 premières lignes :")
     print(df.head())
 
     df.to_csv(output_file, index=False, encoding="utf-8")
-    print(f"✅ Fichier sauvegardé : {output_file}")
+    print(f"✅ [SUCCESS] Fichier sauvegardé : {output_file}")
+    print("🎉 [END] Scraping terminé.")
+
+def schedule_scraper():
+    schedule.every().day.at("04:00").do(run_whois_scraper)
+    
+    print("⏳ [INFO] Scraper programmé pour s'exécuter chaque jour à 04:00...")
+    while True:
+        schedule.run_pending()
+        time.sleep(60)  # Vérifie chaque minute si une tâche doit s'exécuter
 
 if __name__ == "__main__":
-    run_whois_scraper()
+    schedule_scraper()
