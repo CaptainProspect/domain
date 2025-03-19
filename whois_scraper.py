@@ -128,7 +128,7 @@ def run_whois_scraper():
 
     yesterday = datetime.datetime.today() - datetime.timedelta(days=1)
     date_str = yesterday.strftime('%Y%m%d')
-    output_file = os.path.join(WHOIS_FOLDER, f"Lead_{date_str}.csv")
+    output_file = f"Lead_{date_str}.csv"
 
     df = pd.DataFrame(results)
 
