@@ -2,7 +2,7 @@ name: Scraper AFNIC
 
 on:
   schedule:
-    - cron: "0 4 * * *"  # Exécution tous les jours à 4h UTC (5h en France l'hiver, 6h l'été)
+    - cron: "0 4 * * *"  # Exécution tous les jours à 4h UTC
   workflow_dispatch:  # Permet d'exécuter manuellement si besoin
 
 jobs:
@@ -18,7 +18,7 @@ jobs:
           python-version: '3.9'
 
       - name: Installer les dépendances
-        run: pip install python-whois pandas requests
+        run: pip install python-whois pandas requests schedule  # Ajout de 'schedule'
 
       - name: Exécuter le scraper
         run: python whois_scraper.py
