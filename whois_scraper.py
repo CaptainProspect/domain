@@ -136,13 +136,5 @@ def run_whois_scraper():
     print(f"✅ [SUCCESS] Fichier sauvegardé : {output_file}")
     print("🎉 [END] Scraping terminé.")
 
-def schedule_scraper():
-    schedule.every().day.at("04:00").do(run_whois_scraper)
-    
-    print("⏳ [INFO] Scraper programmé pour s'exécuter chaque jour à 04:00...")
-    while True:
-        schedule.run_pending()
-        time.sleep(60)  # Vérifie chaque minute si une tâche doit s'exécuter
-
 if __name__ == "__main__":
-    schedule_scraper()
+    run_whois_scraper()
