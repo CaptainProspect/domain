@@ -5,7 +5,6 @@ import pandas as pd
 import time
 import os
 import re
-import schedule
 
 WHOIS_FOLDER = "whois_project2"
 
@@ -26,7 +25,7 @@ def download_afnic_file():
         afnic_path = os.path.join(WHOIS_FOLDER, "afnic_domains.txt")
         with open(afnic_path, "wb") as f:
             f.write(response.content)
-        print(f"[SUCCESS] Fichier téléchargé avec succès : {afnic_path}")
+        print(f"[SUCCESS] Fichier téléchargé : {afnic_path}")
     except Exception as e:
         print(f"[ERROR] Échec du téléchargement : {e}")
 
@@ -54,13 +53,16 @@ def get_domains_after_bof():
     return valid_domains
 
 def get_titulaire_info(domain):
+    """
+    Récupère les informations WHOIS et formate correctement les données.
+    """
     try:
         print(f"[INFO] WHOIS lookup pour : {domain}")
         w = whois.whois(domain)
         raw_text = w.text if w.text else ""
 
-        creation_date = w.creation_date if w.creation_date else "Non disponible"
-        expiration_date = w.expiration_date if w.expiration_date else "Non disponible"
+        creation_date = str(w.creation_date[0]) if isinstance(w.creation_date, list) else str(w.creation_date)
+        expiration_date = str(w.expiration_date[0]) if isinstance(w.expiration_date, list) else str(w.expiration_date)
 
         nic_hdl_list = re.findall(r"nic-hdl:\s+([A-Z0-9-]+)", raw_text)
 
@@ -80,30 +82,31 @@ def get_titulaire_info(domain):
             phone_m = re.search(r"phone:\s+(.*)", block)
 
             if name_m:
-                name_set.add(name_m.group(1))
+                name_set.add(name_m.group(1).strip())
             if email_m:
-                email_set.add(email_m.group(1))
-            if phone_m and re.match(r"^\+33\.?0?(6|7)", phone_m.group(1)):
-                phone_set.add(phone_m.group(1))
+                email_set.add(email_m.group(1).strip())
+            if phone_m and re.match(r"^\+33\.?0?(6|7)", phone_m.group(1).strip()):
+                phone_set.add(phone_m.group(1).strip())
 
-        if not name_set or not phone_set:
+        if not name_set and not phone_set:
             print(f"[WARNING] {domain} ignoré (pas de titulaire ou tel valide)")
             return None
 
         return {
             "Nom de domaine": domain,
-            "Titulaire": " | ".join(name_set),
+            "Titulaire": " | ".join(name_set) if name_set else "Non disponible",
             "Email": " | ".join(email_set) if email_set else "Non disponible",
-            "Téléphone": " | ".join(phone_set),
-            "Date de création": creation_date,
-            "Date d'expiration": expiration_date
+            "Téléphone": " | ".join(phone_set) if phone_set else "Non disponible",
+            "Date de création": creation_date if creation_date != "None" else "Non disponible",
+            "Date d'expiration": expiration_date if expiration_date != "None" else "Non disponible"
         }
+
     except Exception as e:
         print(f"[ERROR] Échec WHOIS {domain} : {e}")
         return None
 
 def run_whois_scraper():
-    print("🔄 [START] Lancement du scrapping AFNIC...")
+    print("🔄 [START] Lancement du scraping AFNIC...")
     download_afnic_file()
 
     domains = get_domains_after_bof()
@@ -133,7 +136,7 @@ def run_whois_scraper():
     print(df.head())
 
     df.to_csv(output_file, index=False, encoding="utf-8")
-    print(f"✅ [SUCCESS] Fichier sauvegardé : {output_file}")
+    print(f"✅ [SUCCESS] Fichier CSV sauvegardé : {output_file}")
     print("🎉 [END] Scraping terminé.")
 
 if __name__ == "__main__":
