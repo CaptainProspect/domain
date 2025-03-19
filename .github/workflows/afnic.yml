@@ -35,4 +35,4 @@ jobs:
           git pull --rebase  # 🔥 Récupère les mises à jour distantes avant de pousser
           git add whois_project2/*.csv
           git commit -m "Mise à jour des leads AFNIC - $(date '+%Y-%m-%d')" || echo "Rien à committer"
-          git push
+          git push --force  # 🔥 Force le push pour écraser les conflits
