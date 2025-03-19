@@ -6,8 +6,6 @@ import time
 import os
 import re
 
-WHOIS_FOLDER = "whois_project2"
-
 def get_yesterday_afnic_url():
     yesterday = datetime.datetime.today() - datetime.timedelta(days=1)
     date_str = yesterday.strftime('%Y%m%d')
@@ -21,8 +19,7 @@ def download_afnic_file():
         response = requests.get(url, timeout=30)
         response.raise_for_status()
         
-        os.makedirs(WHOIS_FOLDER, exist_ok=True)
-        afnic_path = os.path.join(WHOIS_FOLDER, "afnic_domains.txt")
+        afnic_path = f"afnic_domains.txt"
         with open(afnic_path, "wb") as f:
             f.write(response.content)
         print(f"[SUCCESS] Fichier téléchargé : {afnic_path}")
@@ -30,7 +27,7 @@ def download_afnic_file():
         print(f"[ERROR] Échec du téléchargement : {e}")
 
 def get_domains_after_bof():
-    afnic_path = os.path.join(WHOIS_FOLDER, "afnic_domains.txt")
+    afnic_path = "afnic_domains.txt"
     valid_domains = []
     start_collecting = False
 
@@ -46,10 +43,8 @@ def get_domains_after_bof():
                 continue
             if start_collecting and re.match(r"^[a-z0-9.-]+\.[a-z]{2,}$", line):
                 valid_domains.append(line)
-            if len(valid_domains) >= 50:  # Limite à 50 domaines
-                break
 
-    print(f"[INFO] {len(valid_domains)} domaines trouvés (limite 50).")
+    print(f"[INFO] {len(valid_domains)} domaines trouvés.")  # ✅ On récupère tout
     return valid_domains
 
 def get_titulaire_info(domain):
